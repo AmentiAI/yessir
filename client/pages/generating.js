@@ -26,62 +26,7 @@ export default function Generating() {
     let isCompleted = false
     
     const generateSite = async () => {
-      // Set 2-minute timeout (120,000ms)
-      timeoutId = setTimeout(() => {
-        if (!isCompleted) {
-          console.error('Site generation timed out after 2 minutes')
-          setFailed(true)
-          setErrorMessage('Site generation took too long. Using fallback content instead.')
-          setStage(stages.length - 1) // Show finalizing stage
-          setProgress(100)
-          
-          // Use fallback content
-          const fallback = {
-            hero: { headline: `Welcome to ${businessDetails.businessName}`, subheadline: businessDetails.tagline || `Your trusted ${selectedBusiness.name?.toLowerCase()} partner`, cta: 'Get Started' },
-            about: { title: 'About Us', content: `${businessDetails.businessName} is committed to delivering exceptional ${selectedBusiness.name?.toLowerCase()} services.` },
-            sections: selectedBusiness.sections?.slice(0, 3).map(s => ({ title: s, description: `Our ${s.toLowerCase()} offerings`, items: [{ name: `Premium ${s}`, description: 'High-quality service', price: null }] })) || [],
-            features: [{ title: 'Quality', description: 'Unmatched quality' }, { title: 'Experience', description: 'Years of expertise' }],
-            testimonials: [{ name: 'Satisfied Customer', text: 'Exceptional service!', role: 'Client' }],
-            contact: { address: businessDetails.address || '123 Main St', phone: businessDetails.phone || '(555) 123-4567', email: businessDetails.email || 'hello@example.com', hours: 'Mon-Fri 9am-5pm' },
-            cta: { title: 'Ready to Get Started?', description: 'Contact us today', button: 'Contact Us' }
-          }
-          if (typeof window !== 'undefined') {
-            sessionStorage.setItem('siteContent', JSON.stringify(fallback))
-          }
-          
-          // Redirect after showing error for 2 seconds
-          setTimeout(() => {
-            router.push('/admin')
-          }, 2000)
-        }
-      }, 120000) // 2 minutes
-      
-      // Animate progress
-      for (let i = 0; i < stages.length; i++) {
-        setStage(i)
-        await new Promise(r => setTimeout(r, 700))
-        setProgress(((i + 1) / stages.length) * 100)
-      }
-      
-      // Generate content via API
-      try {
-        const response = await siteAPI.generate()
-        isCompleted = true
-        clearTimeout(timeoutId)
-        
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem('siteContent', JSON.stringify(response.data.site.content))
-        }
-        router.push('/admin')
-      } catch (error) {
-        isCompleted = true
-        clearTimeout(timeoutId)
-        
-        console.error('Site generation error:', error)
-        setFailed(true)
-        setErrorMessage('Failed to generate site. Using fallback content instead.')
-        
-        // Continue with fallback
+      const useFallback = () => {
         const fallback = {
           hero: { headline: `Welcome to ${businessDetails.businessName}`, subheadline: businessDetails.tagline || `Your trusted ${selectedBusiness.name?.toLowerCase()} partner`, cta: 'Get Started' },
           about: { title: 'About Us', content: `${businessDetails.businessName} is committed to delivering exceptional ${selectedBusiness.name?.toLowerCase()} services.` },
@@ -94,11 +39,127 @@ export default function Generating() {
         if (typeof window !== 'undefined') {
           sessionStorage.setItem('siteContent', JSON.stringify(fallback))
         }
+        return fallback
+      }
+      
+      // Set 2-minute timeout (120,000ms)
+      timeoutId = setTimeout(() => {
+        if (!isCompleted) {
+          console.error('Site generation timed out after 2 minutes')
+          isCompleted = true
+          setFailed(true)
+          setErrorMessage('Site generation took too long. Using fallback content instead.')
+          setStage(stages.length - 1)
+          setProgress(100)
+          useFallback()
+          
+          // Redirect after showing error for 1 second
+          setTimeout(() => {
+            router.push('/admin')
+          }, 1000)
+        }
+      }, 120000) // 2 minutes
+      
+      // Start API call immediately (don't wait for animations)
+      let apiResponse = null
+      let apiError = null
+      
+      const apiPromise = siteAPI.generate()
+        .then(response => {
+          if (!isCompleted) {
+            apiResponse = response
+          }
+        })
+        .catch(error => {
+          if (!isCompleted) {
+            apiError = error
+            console.error('API call error:', error)
+          }
+        })
+      
+      // Animate progress while API call is running
+      for (let i = 0; i < stages.length; i++) {
+        setStage(i)
+        setProgress(((i + 1) / stages.length) * 100)
         
-        // Redirect after showing error for 2 seconds
-        setTimeout(() => {
+        // Check if API completed
+        if (apiResponse && !isCompleted) {
+          // API completed successfully
+          isCompleted = true
+          clearTimeout(timeoutId)
+          
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('siteContent', JSON.stringify(apiResponse.data.site.content))
+          }
+          
+          // Complete remaining stages quickly
+          for (let j = i + 1; j < stages.length; j++) {
+            setStage(j)
+            setProgress(((j + 1) / stages.length) * 100)
+            await new Promise(r => setTimeout(r, 150))
+          }
+          
           router.push('/admin')
-        }, 2000)
+          return
+        }
+        
+        if (apiError && !isCompleted) {
+          // API failed, use fallback
+          isCompleted = true
+          clearTimeout(timeoutId)
+          setFailed(true)
+          setErrorMessage('Failed to generate site. Using fallback content instead.')
+          useFallback()
+          setTimeout(() => {
+            router.push('/admin')
+          }, 1000)
+          return
+        }
+        
+        // Wait before next stage
+        await new Promise(r => setTimeout(r, 700))
+      }
+      
+      // If animations finished, wait for API to complete (with a short timeout)
+      try {
+        await Promise.race([
+          apiPromise,
+          new Promise(resolve => setTimeout(resolve, 5000)) // Max 5 seconds after animations
+        ])
+        
+        if (apiResponse && !isCompleted) {
+          isCompleted = true
+          clearTimeout(timeoutId)
+          
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('siteContent', JSON.stringify(apiResponse.data.site.content))
+          }
+          router.push('/admin')
+        } else if (apiError && !isCompleted) {
+          isCompleted = true
+          clearTimeout(timeoutId)
+          setFailed(true)
+          setErrorMessage('Failed to generate site. Using fallback content instead.')
+          useFallback()
+          setTimeout(() => {
+            router.push('/admin')
+          }, 1000)
+        } else if (!isCompleted) {
+          // Still waiting, but timeout will handle it
+          console.log('Still waiting for API response...')
+        }
+      } catch (error) {
+        if (!isCompleted) {
+          isCompleted = true
+          clearTimeout(timeoutId)
+          console.error('Site generation error:', error)
+          setFailed(true)
+          setErrorMessage('Failed to generate site. Using fallback content instead.')
+          useFallback()
+          setTimeout(() => {
+            router.push('/admin')
+          }, 1000)
+        }
       }
     }
     
@@ -163,6 +224,51 @@ export default function Generating() {
             <div key={i} style={{ width: 'clamp(6px, 1.5vw, 8px)', height: 'clamp(6px, 1.5vw, 8px)', borderRadius: '50%', background: i <= stage ? primaryColor : 'rgba(255,255,255,0.1)', transition: 'all 0.3s' }} />
           ))}
         </div>
+        
+        {/* Skip button - appears after 30 seconds */}
+        {!failed && progress > 50 && (
+          <button
+            onClick={() => {
+              const businessDetails = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('businessDetails') || '{}') : {}
+              const selectedBusiness = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('selectedBusiness') || '{}') : {}
+              
+              const fallback = {
+                hero: { headline: `Welcome to ${businessDetails.businessName}`, subheadline: businessDetails.tagline || `Your trusted ${selectedBusiness.name?.toLowerCase()} partner`, cta: 'Get Started' },
+                about: { title: 'About Us', content: `${businessDetails.businessName} is committed to delivering exceptional ${selectedBusiness.name?.toLowerCase()} services.` },
+                sections: selectedBusiness.sections?.slice(0, 3).map(s => ({ title: s, description: `Our ${s.toLowerCase()} offerings`, items: [{ name: `Premium ${s}`, description: 'High-quality service', price: null }] })) || [],
+                features: [{ title: 'Quality', description: 'Unmatched quality' }, { title: 'Experience', description: 'Years of expertise' }],
+                testimonials: [{ name: 'Satisfied Customer', text: 'Exceptional service!', role: 'Client' }],
+                contact: { address: businessDetails.address || '123 Main St', phone: businessDetails.phone || '(555) 123-4567', email: businessDetails.email || 'hello@example.com', hours: 'Mon-Fri 9am-5pm' },
+                cta: { title: 'Ready to Get Started?', description: 'Contact us today', button: 'Contact Us' }
+              }
+              if (typeof window !== 'undefined') {
+                sessionStorage.setItem('siteContent', JSON.stringify(fallback))
+              }
+              router.push('/admin')
+            }}
+            style={{
+              marginTop: '32px',
+              padding: '12px 24px',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '8px',
+              color: '#A1A1AA',
+              fontSize: '14px',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(255,255,255,0.1)'
+              e.target.style.color = '#FAFAFA'
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255,255,255,0.05)'
+              e.target.style.color = '#A1A1AA'
+            }}
+          >
+            Skip to Admin →
+          </button>
+        )}
       </div>
     </div>
   )
