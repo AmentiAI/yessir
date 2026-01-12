@@ -172,18 +172,20 @@ export default function Admin() {
         />
       )}
       
-      <aside style={{
-        width: '260px',
-        background: '#0C0C0E',
-        borderRight: '1px solid rgba(255,255,255,0.05)',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'fixed',
-        height: '100vh',
-        zIndex: 999,
-        transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)',
-        transition: 'transform 0.3s ease'
-      } as any}>
+      <aside 
+        style={{
+          width: '260px',
+          background: '#0C0C0E',
+          borderRight: '1px solid rgba(255,255,255,0.05)',
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'fixed',
+          height: '100vh',
+          zIndex: 999,
+          transform: isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.3s ease'
+        }}
+      >
         <style dangerouslySetInnerHTML={{__html: `
           @media (min-width: 769px) {
             aside {
@@ -257,6 +259,7 @@ export default function Admin() {
       
       {/* Mobile Menu Button */}
       <button
+        className="mobile-menu-btn"
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         style={{
           position: 'fixed',
@@ -273,26 +276,12 @@ export default function Admin() {
           gap: '4px'
         }}
       >
-        <style dangerouslySetInnerHTML={{__html: `
-          @media (min-width: 769px) {
-            button.mobile-menu-btn {
-              display: none !important;
-            }
-          }
-        `}} />
         <div style={{ width: '20px', height: '2px', background: '#FAFAFA', transition: 'all 0.3s', transform: isMobileMenuOpen ? 'rotate(45deg) translate(5px, 5px)' : 'none' }} />
         <div style={{ width: '20px', height: '2px', background: '#FAFAFA', transition: 'all 0.3s', opacity: isMobileMenuOpen ? 0 : 1 }} />
         <div style={{ width: '20px', height: '2px', background: '#FAFAFA', transition: 'all 0.3s', transform: isMobileMenuOpen ? 'rotate(-45deg) translate(7px, -6px)' : 'none' }} />
       </button>
       
-      <main style={{ flex: 1, marginLeft: '0', padding: 'clamp(20px, 4vw, 32px) clamp(16px, 4vw, 40px)', maxWidth: '1400px', width: '100%' }}>
-        <style dangerouslySetInnerHTML={{__html: `
-          @media (min-width: 769px) {
-            main {
-              margin-left: 260px !important;
-            }
-          }
-        `}} />
+      <main className="admin-main" style={{ flex: 1, marginLeft: '0', padding: 'clamp(20px, 4vw, 32px) clamp(16px, 4vw, 40px)', maxWidth: '1400px', width: '100%' }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'clamp(24px, 4vw, 32px)', flexWrap: 'wrap', gap: '16px' }}>
           <div style={{ flex: 1, minWidth: '200px' }}>
             <h1 className="jakarta" style={{ fontSize: 'clamp(20px, 5vw, 26px)', fontWeight: 700 }}>
@@ -550,7 +539,7 @@ export default function Admin() {
                     )}
                     
                     {section.type === 'contact' && (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: 'clamp(16px, 3vw, 20px)' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
                         <Input
                           label="Address"
                           value={section.address || ''}

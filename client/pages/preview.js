@@ -296,17 +296,7 @@ export default function Preview() {
           </div>
           
           {/* Desktop Navigation */}
-          <div style={{ display: 'none' }}>
-            <style dangerouslySetInnerHTML={{__html: `
-              @media (min-width: 769px) {
-                .desktop-nav {
-                  display: flex !important;
-                  align-items: center;
-                  gap: 40px;
-                }
-              }
-            `}} />
-            <div className="desktop-nav" style={{ display: 'none' }}>
+          <div className="desktop-nav" style={{ display: 'none' }}>
               {navItems.map((item, idx) => {
                 const pageSlug = pages.find(p => p.title === item)?.slug || item.toLowerCase()
                 return (

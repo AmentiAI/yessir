@@ -180,6 +180,27 @@ select:focus {
   color: #fff;
 }
 
+/* Admin Dashboard Mobile Styles */
+@media (min-width: 769px) {
+  aside {
+    transform: translateX(0) !important;
+  }
+  
+  .mobile-menu-btn {
+    display: none !important;
+  }
+  
+  .admin-main {
+    margin-left: 260px !important;
+  }
+  
+  .desktop-nav {
+    display: flex !important;
+    align-items: center;
+    gap: 40px;
+  }
+}
+
 /* Mobile Responsive Styles */
 @media (max-width: 768px) {
   body {
