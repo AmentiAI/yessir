@@ -88,25 +88,25 @@ export default function BrandSetup() {
         <div style={{ position: 'absolute', top: '20%', right: '10%', width: '500px', height: '500px', background: `radial-gradient(circle, ${formData.primaryColor}20 0%, transparent 60%)`, filter: 'blur(80px)', transition: 'background 0.5s' }} />
       </div>
       
-      <div style={{ position: 'relative', zIndex: 10, maxWidth: '700px', margin: '0 auto', padding: '48px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '48px' }}>
-          <button onClick={() => router.push('/select-business')} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: '#71717A', fontSize: '14px', cursor: 'pointer' }}>
+      <div style={{ position: 'relative', zIndex: 10, maxWidth: '700px', margin: '0 auto', padding: 'clamp(24px, 5vw, 48px)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'clamp(32px, 6vw, 48px)', flexWrap: 'wrap', gap: '12px' }}>
+          <button onClick={() => router.push('/select-business')} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: '#71717A', fontSize: 'clamp(12px, 3vw, 14px)', cursor: 'pointer' }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             Back
           </button>
-          <Badge>Step 2 of 3</Badge>
+          <Badge style={{ fontSize: 'clamp(10px, 2.5vw, 12px)' }}>Step 2 of 3</Badge>
         </div>
         
-        <div className="animate-fade-up" style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: `${business.color}15`, borderRadius: '100px', marginBottom: '16px' }}>
-            <span style={{ fontSize: '20px' }}>{business.icon}</span>
-            <span style={{ fontSize: '14px', color: business.color, fontWeight: 600 }}>{business.name}</span>
+        <div className="animate-fade-up" style={{ textAlign: 'center', marginBottom: 'clamp(32px, 6vw, 48px)' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: 'clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 16px)', background: `${business.color}15`, borderRadius: '100px', marginBottom: '12px' }}>
+            <span style={{ fontSize: 'clamp(16px, 3vw, 20px)' }}>{business.icon}</span>
+            <span style={{ fontSize: 'clamp(12px, 3vw, 14px)', color: business.color, fontWeight: 600 }}>{business.name}</span>
           </div>
-          <h1 className="jakarta" style={{ fontSize: '36px', fontWeight: 800, letterSpacing: '-1px', marginBottom: '12px' }}>Set up your brand</h1>
-          <p style={{ color: '#71717A', fontSize: '16px' }}>Add your logo and business information</p>
+          <h1 className="jakarta" style={{ fontSize: 'clamp(28px, 6vw, 36px)', fontWeight: 800, letterSpacing: '-1px', marginBottom: '10px' }}>Set up your brand</h1>
+          <p style={{ color: '#71717A', fontSize: 'clamp(14px, 3vw, 16px)' }}>Add your logo and business information</p>
         </div>
         
-        <Card className="animate-fade-up glass-strong" style={{ padding: '40px', animationDelay: '0.1s' }}>
+        <Card className="animate-fade-up glass-strong" style={{ padding: 'clamp(24px, 5vw, 40px)', animationDelay: '0.1s' }}>
           <div style={{ marginBottom: '32px' }}>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#FAFAFA', marginBottom: '12px' }}>Business Logo</label>
             <div
@@ -143,7 +143,7 @@ export default function BrandSetup() {
             <input id="logo-upload" type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: 'clamp(16px, 3vw, 20px)' }}>
             <div style={{ gridColumn: 'span 2' }}>
               <Input
                 label="Business Name *"

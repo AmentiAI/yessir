@@ -45,28 +45,28 @@ export default function Auth() {
   }
   
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: '#09090B', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#09090B', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-        <div style={{ position: 'absolute', top: '20%', right: '20%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 60%)', filter: 'blur(80px)' }} />
-        <div style={{ position: 'absolute', bottom: '20%', left: '20%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 60%)', filter: 'blur(60px)' }} />
+        <div style={{ position: 'absolute', top: '20%', right: '20%', width: 'clamp(300px, 50vw, 500px)', height: 'clamp(300px, 50vw, 500px)', background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 60%)', filter: 'blur(80px)' }} />
+        <div style={{ position: 'absolute', bottom: '20%', left: '20%', width: 'clamp(250px, 40vw, 400px)', height: 'clamp(250px, 40vw, 400px)', background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 60%)', filter: 'blur(60px)' }} />
       </div>
       
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '64px', position: 'relative', zIndex: 10 }}>
-        <button onClick={() => router.push('/')} style={{ position: 'absolute', top: '32px', left: '32px', display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: '#71717A', fontSize: '14px', cursor: 'pointer' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 'clamp(24px, 5vw, 64px)', position: 'relative', zIndex: 10 }}>
+        <button onClick={() => router.push('/')} style={{ position: 'absolute', top: 'clamp(16px, 3vw, 32px)', left: 'clamp(16px, 3vw, 32px)', display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', color: '#71717A', fontSize: 'clamp(12px, 3vw, 14px)', cursor: 'pointer' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           Back
         </button>
         
-        <div style={{ maxWidth: '480px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '48px' }}>
-            <div style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>⚡</div>
-            <span className="jakarta" style={{ fontSize: '28px', fontWeight: 800 }}>SiteForge</span>
+        <div style={{ maxWidth: '480px', margin: '0 auto', width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: 'clamp(32px, 6vw, 48px)' }}>
+            <div style={{ width: 'clamp(40px, 5vw, 48px)', height: 'clamp(40px, 5vw, 48px)', background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(20px, 4vw, 24px)' }}>⚡</div>
+            <span className="jakarta" style={{ fontSize: 'clamp(24px, 5vw, 28px)', fontWeight: 800 }}>SiteForge</span>
           </div>
           
-          <h1 className="jakarta" style={{ fontSize: '44px', fontWeight: 800, lineHeight: 1.15, letterSpacing: '-1.5px', marginBottom: '20px' }}>
+          <h1 className="jakarta" style={{ fontSize: 'clamp(32px, 7vw, 44px)', fontWeight: 800, lineHeight: 1.15, letterSpacing: '-1px', marginBottom: '16px' }}>
             {authType === 'signup' ? 'Start building your dream website' : 'Welcome back'}
           </h1>
-          <p style={{ fontSize: '17px', color: '#71717A', lineHeight: 1.7 }}>
+          <p style={{ fontSize: 'clamp(15px, 3vw, 17px)', color: '#71717A', lineHeight: 1.7 }}>
             {authType === 'signup' 
               ? 'Join thousands of businesses using AI to create stunning websites in minutes.'
               : 'Sign in to continue managing your websites and projects.'
@@ -74,9 +74,9 @@ export default function Auth() {
           </p>
           
           {authType === 'signup' && (
-            <div style={{ marginTop: '48px', display: 'flex', gap: '24px' }}>
+            <div style={{ marginTop: 'clamp(32px, 6vw, 48px)', display: 'flex', gap: 'clamp(16px, 3vw, 24px)', flexWrap: 'wrap' }}>
               {['50K+ Sites', '99.9% Uptime', '24/7 Support'].map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#52525B', fontSize: '13px' }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#52525B', fontSize: 'clamp(11px, 2.5vw, 13px)' }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2"><path d="M20 6L9 17l-5-5"/></svg>
                   {item}
                 </div>
@@ -86,12 +86,12 @@ export default function Auth() {
         </div>
       </div>
       
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px', position: 'relative', zIndex: 10 }}>
-        <Card className="animate-scale glass-strong" style={{ width: '100%', maxWidth: '420px', padding: '40px' }}>
-          <h2 className="jakarta" style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'clamp(24px, 5vw, 48px)', position: 'relative', zIndex: 10 }}>
+        <Card className="animate-scale glass-strong" style={{ width: '100%', maxWidth: '420px', padding: 'clamp(24px, 5vw, 40px)' }}>
+          <h2 className="jakarta" style={{ fontSize: 'clamp(20px, 4vw, 24px)', fontWeight: 700, marginBottom: '8px' }}>
             {authType === 'signup' ? 'Create your account' : 'Sign in'}
           </h2>
-          <p style={{ color: '#71717A', fontSize: '14px', marginBottom: '32px' }}>
+          <p style={{ color: '#71717A', fontSize: 'clamp(12px, 3vw, 14px)', marginBottom: 'clamp(24px, 4vw, 32px)' }}>
             {authType === 'signup' ? 'Get started with a free account' : 'Enter your credentials to continue'}
           </p>
           

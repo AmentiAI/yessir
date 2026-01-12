@@ -20,8 +20,24 @@ const BUSINESS_TYPES = {
   nonprofit: { name: 'Non-Profit & Charity', sections: ['Mission', 'Programs', 'Impact', 'Get Involved', 'Donate', 'Events'] },
 };
 
+// Generate fallback images
+function generateFallbackImages(business, color) {
+  const placeholderBase = 'https://via.placeholder.com/1024x1024';
+  return [
+    `${placeholderBase}/${color.replace('#', '')}/ffffff?text=Hero+Image`,
+    `${placeholderBase}/${color.replace('#', '')}/ffffff?text=Services`,
+    `${placeholderBase}/${color.replace('#', '')}/ffffff?text=About+Us`,
+    `${placeholderBase}/${color.replace('#', '')}/ffffff?text=Gallery`,
+    `${placeholderBase}/${color.replace('#', '')}/ffffff?text=Contact`
+  ];
+}
+
 function generateFallbackContent(business, businessType) {
+  const color = business.primary_color || '#6366F1';
+  const fallbackImages = generateFallbackImages(business, color);
+  
   return {
+    images: fallbackImages,
     pages: [
       {
         slug: 'home',
@@ -30,7 +46,8 @@ function generateFallbackContent(business, businessType) {
           headline: `Welcome to ${business.business_name}`,
           subheadline: business.tagline || `Your trusted ${businessType.name.toLowerCase()} partner`,
           primaryCta: 'Get Started',
-          secondaryCta: 'Learn More'
+          secondaryCta: 'Learn More',
+          image: fallbackImages[0]
         },
         sections: [
           {
@@ -64,12 +81,13 @@ function generateFallbackContent(business, businessType) {
           {
             type: 'services',
             title: 'What We Offer',
-            items: businessType.sections.slice(0, 4).map(s => ({
+            items: businessType.sections.slice(0, 4).map((s, idx) => ({
               name: s,
-              description: `Professional ${s.toLowerCase()} services`,
+              description: `Professional ${s.toLowerCase()} services tailored to your needs. We deliver exceptional quality and results.`,
               price: null,
               cta: 'Book Service',
-              secondaryCta: 'Learn More'
+              secondaryCta: 'Learn More',
+              image: fallbackImages[(idx + 1) % fallbackImages.length]
             }))
           },
           {
@@ -168,10 +186,49 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid business type' });
     }
 
-    // Generate content using OpenAI - Multi-page structure with lots of CTAs
-    const prompt = `Generate a professional MULTI-PAGE website for a ${businessType.name} business called "${business.business_name}"${business.tagline ? ` with tagline "${business.tagline}"` : ''}.
+    // Generate images first using DALL-E
+    const generateImages = async () => {
+      const color = business.primary_color || '#6366F1';
+      const imagePrompts = [
+        `Professional hero image for ${business.business_name}, a ${businessType.name.toLowerCase()} business. Modern, clean, professional photography style.`,
+        `Service showcase image for ${business.business_name}. High-quality product/service photography.`,
+        `Team or about us image for ${business.business_name}. Professional, welcoming atmosphere.`,
+        `Gallery or portfolio image showcasing ${businessType.name.toLowerCase()} work. Professional quality.`,
+        `Contact or location image for ${business.business_name}. Modern office or business space.`
+      ];
 
-Create 4-6 separate pages with lots of call-to-action buttons throughout. Return ONLY valid JSON (no markdown, no backticks, no explanations):
+      const images = [];
+      for (const imgPrompt of imagePrompts) {
+        try {
+          const imageResponse = await openai.images.generate({
+            model: 'dall-e-3',
+            prompt: imgPrompt,
+            n: 1,
+            size: '1024x1024',
+            quality: 'standard'
+          });
+          if (imageResponse.data && imageResponse.data[0]?.url) {
+            images.push(imageResponse.data[0].url);
+          } else {
+            // Fallback placeholder
+            images.push(`https://via.placeholder.com/1024x1024/${color.replace('#', '')}/ffffff?text=${encodeURIComponent(business.business_name)}`);
+          }
+        } catch (imgError) {
+          console.error('Image generation error:', imgError);
+          // Use placeholder if image generation fails
+          images.push(`https://via.placeholder.com/1024x1024/${color.replace('#', '')}/ffffff?text=${encodeURIComponent(business.business_name)}`);
+        }
+      }
+      return images;
+    };
+
+    // Generate images
+    const generatedImages = await generateImages();
+
+    // Generate content using OpenAI - Multi-page structure with lots of CTAs
+    const prompt = `Generate a professional, fully-built MULTI-PAGE website for a ${businessType.name} business called "${business.business_name}"${business.tagline ? ` with tagline "${business.tagline}"` : ''}.
+
+Create 5-6 comprehensive pages with extensive content, lots of call-to-action buttons, and detailed sections. Make it a complete, production-ready website. Return ONLY valid JSON (no markdown, no backticks, no explanations):
 
 {
   "pages": [
@@ -316,12 +373,40 @@ Create 4-6 separate pages with lots of call-to-action buttons throughout. Return
           }
         ],
         temperature: 0.7,
-        max_tokens: 4000
+        max_tokens: 6000
       });
 
       const content = completion.choices[0].message.content.trim();
       const cleanContent = content.replace(/```json|```/g, '').trim();
       siteContent = JSON.parse(cleanContent);
+      
+      // Add generated images to site content
+      siteContent.images = generatedImages;
+      
+      // Add images to pages and sections
+      if (siteContent.pages && Array.isArray(siteContent.pages)) {
+        siteContent.pages.forEach((page, idx) => {
+          // Add hero image
+          if (page.hero && !page.hero.image) {
+            page.hero.image = generatedImages[0] || generatedImages[idx % generatedImages.length];
+          }
+          
+          // Add images to sections
+          if (page.sections && Array.isArray(page.sections)) {
+            page.sections.forEach((section, sectionIdx) => {
+              if (section.type === 'services' || section.type === 'features') {
+                section.items = section.items?.map((item, itemIdx) => ({
+                  ...item,
+                  image: generatedImages[(idx + sectionIdx + itemIdx) % generatedImages.length]
+                }));
+              }
+              if (section.type === 'gallery' && !section.images) {
+                section.images = generatedImages;
+              }
+            });
+          }
+        });
+      }
     } catch (parseError) {
       console.error('Failed to parse OpenAI response:', parseError);
       siteContent = generateFallbackContent(business, businessType);

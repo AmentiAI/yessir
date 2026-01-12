@@ -66,28 +66,28 @@ export default function Generating() {
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '600px', height: '600px', background: `radial-gradient(circle, ${primaryColor}15 0%, transparent 60%)`, filter: 'blur(80px)' }} />
       </div>
       
-      <div style={{ position: 'relative', zIndex: 10, textAlign: 'center', maxWidth: '500px', padding: '48px' }}>
-        <div style={{ position: 'relative', width: '120px', height: '120px', margin: '0 auto 40px' }}>
+      <div style={{ position: 'relative', zIndex: 10, textAlign: 'center', maxWidth: '500px', padding: 'clamp(24px, 5vw, 48px)', width: '100%' }}>
+        <div style={{ position: 'relative', width: 'clamp(80px, 15vw, 120px)', height: 'clamp(80px, 15vw, 120px)', margin: '0 auto clamp(24px, 5vw, 40px)' }}>
           <div style={{ position: 'absolute', inset: 0, border: '3px solid rgba(255,255,255,0.05)', borderRadius: '50%' }} />
           <div style={{ position: 'absolute', inset: 0, border: '3px solid transparent', borderTopColor: primaryColor, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
           <div style={{ position: 'absolute', inset: '8px', border: '3px solid transparent', borderTopColor: `${primaryColor}60`, borderRadius: '50%', animation: 'spin 1.5s linear infinite reverse' }} />
           <div style={{ position: 'absolute', inset: '20px', background: `${primaryColor}15`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: '40px' }}>{stages[stage]?.icon}</span>
+            <span style={{ fontSize: 'clamp(28px, 6vw, 40px)' }}>{stages[stage]?.icon}</span>
           </div>
         </div>
         
-        <h2 className="jakarta" style={{ fontSize: '28px', fontWeight: 700, marginBottom: '12px' }}>Building Your Website</h2>
-        <p style={{ color: '#71717A', fontSize: '16px', marginBottom: '40px', minHeight: '24px' }}>{stages[stage]?.label}</p>
+        <h2 className="jakarta" style={{ fontSize: 'clamp(24px, 5vw, 28px)', fontWeight: 700, marginBottom: '10px' }}>Building Your Website</h2>
+        <p style={{ color: '#71717A', fontSize: 'clamp(14px, 3vw, 16px)', marginBottom: 'clamp(24px, 5vw, 40px)', minHeight: '24px' }}>{stages[stage]?.label}</p>
         
-        <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden', marginBottom: '16px' }}>
+        <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px' }}>
           <div style={{ height: '100%', width: `${progress}%`, background: `linear-gradient(90deg, ${primaryColor}, ${primaryColor}CC)`, borderRadius: '2px', transition: 'width 0.5s ease' }} />
         </div>
         
-        <p style={{ color: '#52525B', fontSize: '13px' }}>{Math.round(progress)}% complete</p>
+        <p style={{ color: '#52525B', fontSize: 'clamp(11px, 2.5vw, 13px)' }}>{Math.round(progress)}% complete</p>
         
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: 'clamp(24px, 4vw, 32px)', flexWrap: 'wrap' }}>
           {stages.map((_, i) => (
-            <div key={i} style={{ width: '8px', height: '8px', borderRadius: '50%', background: i <= stage ? primaryColor : 'rgba(255,255,255,0.1)', transition: 'all 0.3s' }} />
+            <div key={i} style={{ width: 'clamp(6px, 1.5vw, 8px)', height: 'clamp(6px, 1.5vw, 8px)', borderRadius: '50%', background: i <= stage ? primaryColor : 'rgba(255,255,255,0.1)', transition: 'all 0.3s' }} />
           ))}
         </div>
       </div>
