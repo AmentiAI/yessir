@@ -31,17 +31,38 @@ export default function Admin() {
           setActivePage(dashboardRes.data.site.content.pages[0].slug)
         }
       } catch (error) {
-        const storedDetails = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('businessDetails') || '{}') : {}
-        const storedBusiness = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('selectedBusiness') || '{}') : {}
-        const storedContent = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('siteContent') || '{}') : {}
+        console.error('Error loading admin data:', error)
         
-        setBusinessDetails(storedDetails)
-        setSelectedBusiness(storedBusiness)
-        setSiteContent(storedContent)
-        
-        if (storedContent?.pages && storedContent.pages.length > 0) {
-          setActivePage(storedContent.pages[0].slug)
+        // Try to get from sessionStorage
+        try {
+          const storedDetails = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('businessDetails') || '{}') : {}
+          const storedBusiness = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('selectedBusiness') || '{}') : {}
+          const storedContent = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('siteContent') || '{}') : {}
+          
+          // Only set if we have valid data
+          if (storedDetails && Object.keys(storedDetails).length > 0 && storedDetails.businessName) {
+            setBusinessDetails(storedDetails)
+          }
+          if (storedBusiness && Object.keys(storedBusiness).length > 0) {
+            setSelectedBusiness(storedBusiness)
+          }
+          if (storedContent && Object.keys(storedContent).length > 0) {
+            setSiteContent(storedContent)
+            
+            if (storedContent?.pages && Array.isArray(storedContent.pages) && storedContent.pages.length > 0) {
+              setActivePage(storedContent.pages[0].slug)
+            }
+          }
+        } catch (storageError) {
+          console.error('Error reading sessionStorage:', storageError)
         }
+        
+        // If no valid data, redirect to setup
+        setTimeout(() => {
+          if (!businessDetails || !siteContent) {
+            router.push('/select-business')
+          }
+        }, 2000)
       } finally {
         setLoading(false)
       }
@@ -50,12 +71,26 @@ export default function Admin() {
     loadData()
   }, [])
   
-  if (loading || !businessDetails || !selectedBusiness || !siteContent) {
+  // Check if we have valid data (not just empty objects)
+  const hasValidData = businessDetails && 
+    Object.keys(businessDetails).length > 0 && 
+    businessDetails.businessName &&
+    selectedBusiness && 
+    Object.keys(selectedBusiness).length > 0 &&
+    siteContent && 
+    Object.keys(siteContent).length > 0
+
+  if (loading || !hasValidData) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#09090B' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ width: '48px', height: '48px', border: '3px solid rgba(99,102,241,0.3)', borderTopColor: '#6366F1', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
           <p style={{ color: '#71717A' }}>Loading...</p>
+          {!loading && !hasValidData && (
+            <p style={{ color: '#EF4444', marginTop: '16px', fontSize: '14px' }}>
+              Missing data. Redirecting to setup...
+            </p>
+          )}
         </div>
       </div>
     )
@@ -203,14 +238,14 @@ export default function Admin() {
         <div style={{ padding: '20px' }}>
           <div className="glass" style={{ padding: '16px', borderRadius: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              {businessDetails.logoUrl ? (
+              {businessDetails?.logoUrl ? (
                 <img src={businessDetails.logoUrl} alt="Logo" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'contain', background: '#fff' }} />
               ) : (
-                <div style={{ width: '40px', height: '40px', background: businessDetails.primaryColor, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>{selectedBusiness.icon}</div>
+                <div style={{ width: '40px', height: '40px', background: businessDetails?.primaryColor || '#6366F1', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>{selectedBusiness?.icon || '⚡'}</div>
               )}
               <div>
-                <p style={{ fontWeight: 600, fontSize: '14px' }}>{businessDetails.businessName}</p>
-                <p style={{ fontSize: '12px', color: '#71717A' }}>{selectedBusiness.name}</p>
+                <p style={{ fontWeight: 600, fontSize: '14px' }}>{businessDetails?.businessName || 'Business'}</p>
+                <p style={{ fontSize: '12px', color: '#71717A' }}>{selectedBusiness?.name || 'Business Type'}</p>
               </div>
             </div>
             <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -324,8 +359,8 @@ export default function Admin() {
                   onClick={() => setActivePage(page.slug)}
                   style={{
                     padding: '12px 24px',
-                    background: activePage === page.slug ? businessDetails.primaryColor : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${activePage === page.slug ? businessDetails.primaryColor : 'rgba(255,255,255,0.08)'}`,
+                    background: activePage === page.slug ? (businessDetails?.primaryColor || '#6366F1') : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${activePage === page.slug ? (businessDetails?.primaryColor || '#6366F1') : 'rgba(255,255,255,0.08)'}`,
                     borderRadius: '10px',
                     color: activePage === page.slug ? '#fff' : '#FAFAFA',
                     fontSize: '14px',
@@ -344,7 +379,7 @@ export default function Admin() {
                 {/* Hero Section Editor */}
                 <Card>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-                    <div style={{ width: '40px', height: '40px', background: `${businessDetails.primaryColor}20`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>🎯</div>
+                    <div style={{ width: '40px', height: '40px', background: `${businessDetails?.primaryColor || '#6366F1'}20`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>🎯</div>
                     <div>
                       <h3 className="jakarta" style={{ fontSize: '16px', fontWeight: 700 }}>Hero Section</h3>
                       <p style={{ color: '#71717A', fontSize: '13px' }}>Main banner for {currentPageData.title} page</p>

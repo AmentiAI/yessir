@@ -1,5 +1,5 @@
 import '../styles/globals.css'
-import { useState, useEffect } from 'react'
+import { Component } from 'react'
 import { useRouter } from 'next/router'
 import { authAPI, businessAPI, siteAPI } from '../lib/api'
 
@@ -19,6 +19,83 @@ export const BUSINESS_TYPES = [
   { id: 'nonprofit', name: 'Non-Profit & Charity', icon: '❤️', color: '#E11D48', gradient: 'linear-gradient(135deg, #E11D48 0%, #BE123C 100%)', sections: ['Mission', 'Programs', 'Impact', 'Get Involved', 'Donate', 'Events'], description: 'Charities, foundations, NGOs' },
 ]
 
+// Error Boundary Component
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ 
+          minHeight: '100vh', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          background: '#09090B',
+          padding: '20px',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '120px', marginBottom: '20px' }}>⚠️</div>
+          <h1 style={{ 
+            fontSize: '48px', 
+            fontWeight: 800, 
+            marginBottom: '16px',
+            color: '#FFFFFF'
+          }}>
+            Something Went Wrong
+          </h1>
+          <p style={{ 
+            fontSize: '18px', 
+            color: '#A1A1AA', 
+            marginBottom: '32px',
+            maxWidth: '500px'
+          }}>
+            An unexpected error occurred. Please refresh the page or try again.
+          </p>
+          <button
+            onClick={() => {
+              this.setState({ hasError: false, error: null })
+              if (typeof window !== 'undefined') {
+                window.location.href = '/'
+              }
+            }}
+            style={{
+              padding: '12px 24px',
+              background: '#6366F1',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            Go Home
+          </button>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
+
 export default function App({ Component, pageProps }) {
-  return <Component {...pageProps} />
+  return (
+    <ErrorBoundary>
+      <Component {...pageProps} />
+    </ErrorBoundary>
+  )
 }
