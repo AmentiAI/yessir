@@ -22,37 +22,121 @@ const BUSINESS_TYPES = {
 
 function generateFallbackContent(business, businessType) {
   return {
-    hero: {
-      headline: `Welcome to ${business.business_name}`,
-      subheadline: business.tagline || `Your trusted ${businessType.name.toLowerCase()} partner`,
-      cta: 'Get Started'
-    },
-    about: {
-      title: 'About Us',
-      content: `${business.business_name} is committed to delivering exceptional ${businessType.name.toLowerCase()} services with professionalism and care.`
-    },
-    sections: businessType.sections.slice(0, 3).map(s => ({
-      title: s,
-      description: `Our ${s.toLowerCase()} offerings`,
-      items: [{ name: `Premium ${s}`, description: 'High-quality service', price: null }]
-    })),
-    features: [
-      { title: 'Quality', description: 'Unmatched quality in everything we do' },
-      { title: 'Experience', description: 'Years of industry expertise' }
+    pages: [
+      {
+        slug: 'home',
+        title: 'Home',
+        hero: {
+          headline: `Welcome to ${business.business_name}`,
+          subheadline: business.tagline || `Your trusted ${businessType.name.toLowerCase()} partner`,
+          primaryCta: 'Get Started',
+          secondaryCta: 'Learn More'
+        },
+        sections: [
+          {
+            type: 'features',
+            title: 'Why Choose Us',
+            items: [
+              { title: 'Quality', description: 'Unmatched quality in everything we do', cta: 'Learn More' },
+              { title: 'Experience', description: 'Years of industry expertise', cta: 'Our Story' },
+              { title: 'Results', description: 'Proven track record of success', cta: 'See Results' }
+            ]
+          },
+          {
+            type: 'cta',
+            title: 'Ready to Get Started?',
+            description: 'Join thousands of satisfied customers',
+            button: 'Start Now',
+            secondaryButton: 'Schedule a Call'
+          }
+        ]
+      },
+      {
+        slug: 'services',
+        title: 'Services',
+        hero: {
+          headline: 'Our Services',
+          subheadline: 'What we offer',
+          primaryCta: 'Book Now',
+          secondaryCta: 'Get Quote'
+        },
+        sections: [
+          {
+            type: 'services',
+            title: 'What We Offer',
+            items: businessType.sections.slice(0, 4).map(s => ({
+              name: s,
+              description: `Professional ${s.toLowerCase()} services`,
+              price: null,
+              cta: 'Book Service',
+              secondaryCta: 'Learn More'
+            }))
+          },
+          {
+            type: 'cta',
+            title: 'Not Sure What You Need?',
+            description: "Let's discuss your requirements",
+            button: 'Contact Us',
+            secondaryButton: 'View Packages'
+          }
+        ]
+      },
+      {
+        slug: 'about',
+        title: 'About',
+        hero: {
+          headline: `About ${business.business_name}`,
+          subheadline: 'Our story and mission',
+          primaryCta: 'Work With Us',
+          secondaryCta: 'Our Team'
+        },
+        sections: [
+          {
+            type: 'content',
+            title: 'Our Story',
+            content: `${business.business_name} is committed to delivering exceptional ${businessType.name.toLowerCase()} services with professionalism and care. We've been serving our community for years with dedication and excellence.`
+          },
+          {
+            type: 'cta',
+            title: 'Want to Learn More?',
+            description: 'Get in touch with our team',
+            button: 'Contact Us',
+            secondaryButton: 'View Services'
+          }
+        ]
+      },
+      {
+        slug: 'contact',
+        title: 'Contact',
+        hero: {
+          headline: 'Get In Touch',
+          subheadline: "We'd love to hear from you",
+          primaryCta: 'Send Message',
+          secondaryCta: 'Call Now'
+        },
+        sections: [
+          {
+            type: 'contact',
+            address: business.address || '123 Main St',
+            phone: business.phone || '(555) 123-4567',
+            email: business.email || 'hello@example.com',
+            hours: 'Mon-Fri 9am-5pm'
+          },
+          {
+            type: 'cta',
+            title: 'Prefer to Talk?',
+            description: 'Schedule a free consultation',
+            button: 'Book Appointment',
+            secondaryButton: 'Call Us'
+          }
+        ]
+      }
     ],
     testimonials: [
-      { name: 'Satisfied Customer', text: 'Exceptional service and results!', role: 'Client' }
+      { name: 'Satisfied Customer', text: 'Exceptional service and results!', role: 'Client', cta: 'Read More' }
     ],
-    contact: {
-      address: business.address || '123 Main St',
-      phone: business.phone || '(555) 123-4567',
-      email: business.email || 'hello@example.com',
-      hours: 'Mon-Fri 9am-5pm'
-    },
-    cta: {
-      title: 'Ready to Get Started?',
-      description: 'Contact us today',
-      button: 'Contact Us'
+    navigation: {
+      items: ['Home', 'Services', 'About', 'Contact']
     }
   };
 }
@@ -84,56 +168,136 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid business type' });
     }
 
-    // Generate content using OpenAI
-    const prompt = `Generate professional website content for a ${businessType.name} business called "${business.business_name}"${business.tagline ? ` with tagline "${business.tagline}"` : ''}.
+    // Generate content using OpenAI - Multi-page structure with lots of CTAs
+    const prompt = `Generate a professional MULTI-PAGE website for a ${businessType.name} business called "${business.business_name}"${business.tagline ? ` with tagline "${business.tagline}"` : ''}.
 
-Return ONLY valid JSON (no markdown, no backticks, no explanations):
+Create 4-6 separate pages with lots of call-to-action buttons throughout. Return ONLY valid JSON (no markdown, no backticks, no explanations):
+
 {
-  "hero": {
-    "headline": "compelling headline for the business",
-    "subheadline": "engaging subheadline that describes what they offer",
-    "cta": "action button text like 'Get Started' or 'Contact Us'"
-  },
-  "about": {
-    "title": "About section title",
-    "content": "2-3 sentences about the business, its mission, and what makes it special"
-  },
-  "sections": [
+  "pages": [
     {
-      "title": "Section name from: ${businessType.sections.join(', ')}",
-      "description": "Brief section intro",
-      "items": [
+      "slug": "home",
+      "title": "Home",
+      "hero": {
+        "headline": "compelling headline",
+        "subheadline": "engaging subheadline",
+        "primaryCta": "Get Started",
+        "secondaryCta": "Learn More"
+      },
+      "sections": [
         {
-          "name": "Service/Product name",
-          "description": "Description of what this offers",
-          "price": "$XX or null"
+          "type": "features",
+          "title": "Why Choose Us",
+          "items": [
+            {
+              "title": "Feature name",
+              "description": "Feature description",
+              "cta": "Learn More"
+            }
+          ]
+        },
+        {
+          "type": "cta",
+          "title": "Ready to Get Started?",
+          "description": "Join thousands of satisfied customers",
+          "button": "Start Now",
+          "secondaryButton": "Schedule a Call"
         }
       ]
-    }
-  ],
-  "features": [
+    },
     {
-      "title": "Key feature or benefit",
-      "description": "Why this matters to customers"
+      "slug": "services",
+      "title": "Services",
+      "hero": {
+        "headline": "Our Services",
+        "subheadline": "What we offer",
+        "primaryCta": "Book Now",
+        "secondaryCta": "Get Quote"
+      },
+      "sections": [
+        {
+          "type": "services",
+          "title": "What We Offer",
+          "items": [
+            {
+              "name": "Service name from: ${businessType.sections.join(', ')}",
+              "description": "Service description",
+              "price": "$XX or null",
+              "cta": "Book Service",
+              "secondaryCta": "Learn More"
+            }
+          ]
+        },
+        {
+          "type": "cta",
+          "title": "Not Sure What You Need?",
+          "description": "Let's discuss your requirements",
+          "button": "Contact Us",
+          "secondaryButton": "View Packages"
+        }
+      ]
+    },
+    {
+      "slug": "about",
+      "title": "About",
+      "hero": {
+        "headline": "About ${business.business_name}",
+        "subheadline": "Our story and mission",
+        "primaryCta": "Work With Us",
+        "secondaryCta": "Our Team"
+      },
+      "sections": [
+        {
+          "type": "content",
+          "title": "Our Story",
+          "content": "2-3 paragraphs about the business, mission, values"
+        },
+        {
+          "type": "cta",
+          "title": "Want to Learn More?",
+          "description": "Get in touch with our team",
+          "button": "Contact Us",
+          "secondaryButton": "View Services"
+        }
+      ]
+    },
+    {
+      "slug": "contact",
+      "title": "Contact",
+      "hero": {
+        "headline": "Get In Touch",
+        "subheadline": "We'd love to hear from you",
+        "primaryCta": "Send Message",
+        "secondaryCta": "Call Now"
+      },
+      "sections": [
+        {
+          "type": "contact",
+          "address": "${business.address || '123 Main St, City, ST 12345'}",
+          "phone": "${business.phone || '(555) 123-4567'}",
+          "email": "${business.email || 'hello@business.com'}",
+          "hours": "Business hours"
+        },
+        {
+          "type": "cta",
+          "title": "Prefer to Talk?",
+          "description": "Schedule a free consultation",
+          "button": "Book Appointment",
+          "secondaryButton": "Call Us"
+        }
+      ]
     }
   ],
   "testimonials": [
     {
       "name": "Customer Name",
-      "text": "Realistic testimonial quote about their experience",
-      "role": "Customer title or role"
+      "text": "Testimonial quote",
+      "role": "Customer role",
+      "cta": "Read More"
     }
   ],
-  "contact": {
-    "address": "${business.address || '123 Main St, City, ST 12345'}",
-    "phone": "${business.phone || '(555) 123-4567'}",
-    "email": "${business.email || 'hello@business.com'}",
-    "hours": "Business hours (e.g., 'Mon-Fri 9am-5pm')"
-  },
-  "cta": {
-    "title": "Final call to action title",
-    "description": "Encouraging text to convert visitors",
-    "button": "Button text"
+  "navigation": {
+    "items": ["Home", "Services", "About", "Contact"]
   }
 }`;
 
@@ -152,7 +316,7 @@ Return ONLY valid JSON (no markdown, no backticks, no explanations):
           }
         ],
         temperature: 0.7,
-        max_tokens: 2000
+        max_tokens: 4000
       });
 
       const content = completion.choices[0].message.content.trim();
