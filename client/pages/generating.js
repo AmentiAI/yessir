@@ -6,6 +6,8 @@ export default function Generating() {
   const router = useRouter()
   const [progress, setProgress] = useState(0)
   const [stage, setStage] = useState(0)
+  const [failed, setFailed] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   
   const stages = [
     { label: 'Analyzing business requirements', icon: '🔍' },
@@ -20,7 +22,40 @@ export default function Generating() {
     const businessDetails = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('businessDetails') || '{}') : {}
     const selectedBusiness = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('selectedBusiness') || '{}') : {}
     
+    let timeoutId
+    let isCompleted = false
+    
     const generateSite = async () => {
+      // Set 2-minute timeout (120,000ms)
+      timeoutId = setTimeout(() => {
+        if (!isCompleted) {
+          console.error('Site generation timed out after 2 minutes')
+          setFailed(true)
+          setErrorMessage('Site generation took too long. Using fallback content instead.')
+          setStage(stages.length - 1) // Show finalizing stage
+          setProgress(100)
+          
+          // Use fallback content
+          const fallback = {
+            hero: { headline: `Welcome to ${businessDetails.businessName}`, subheadline: businessDetails.tagline || `Your trusted ${selectedBusiness.name?.toLowerCase()} partner`, cta: 'Get Started' },
+            about: { title: 'About Us', content: `${businessDetails.businessName} is committed to delivering exceptional ${selectedBusiness.name?.toLowerCase()} services.` },
+            sections: selectedBusiness.sections?.slice(0, 3).map(s => ({ title: s, description: `Our ${s.toLowerCase()} offerings`, items: [{ name: `Premium ${s}`, description: 'High-quality service', price: null }] })) || [],
+            features: [{ title: 'Quality', description: 'Unmatched quality' }, { title: 'Experience', description: 'Years of expertise' }],
+            testimonials: [{ name: 'Satisfied Customer', text: 'Exceptional service!', role: 'Client' }],
+            contact: { address: businessDetails.address || '123 Main St', phone: businessDetails.phone || '(555) 123-4567', email: businessDetails.email || 'hello@example.com', hours: 'Mon-Fri 9am-5pm' },
+            cta: { title: 'Ready to Get Started?', description: 'Contact us today', button: 'Contact Us' }
+          }
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('siteContent', JSON.stringify(fallback))
+          }
+          
+          // Redirect after showing error for 2 seconds
+          setTimeout(() => {
+            router.push('/admin')
+          }, 2000)
+        }
+      }, 120000) // 2 minutes
+      
       // Animate progress
       for (let i = 0; i < stages.length; i++) {
         setStage(i)
@@ -31,12 +66,21 @@ export default function Generating() {
       // Generate content via API
       try {
         const response = await siteAPI.generate()
+        isCompleted = true
+        clearTimeout(timeoutId)
+        
         if (typeof window !== 'undefined') {
           sessionStorage.setItem('siteContent', JSON.stringify(response.data.site.content))
         }
         router.push('/admin')
       } catch (error) {
+        isCompleted = true
+        clearTimeout(timeoutId)
+        
         console.error('Site generation error:', error)
+        setFailed(true)
+        setErrorMessage('Failed to generate site. Using fallback content instead.')
+        
         // Continue with fallback
         const fallback = {
           hero: { headline: `Welcome to ${businessDetails.businessName}`, subheadline: businessDetails.tagline || `Your trusted ${selectedBusiness.name?.toLowerCase()} partner`, cta: 'Get Started' },
@@ -50,11 +94,22 @@ export default function Generating() {
         if (typeof window !== 'undefined') {
           sessionStorage.setItem('siteContent', JSON.stringify(fallback))
         }
-        router.push('/admin')
+        
+        // Redirect after showing error for 2 seconds
+        setTimeout(() => {
+          router.push('/admin')
+        }, 2000)
       }
     }
     
     generateSite()
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+    }
   }, [router, stages.length])
   
   const businessDetails = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('businessDetails') || '{}') : {}
@@ -76,8 +131,26 @@ export default function Generating() {
           </div>
         </div>
         
-        <h2 className="jakarta" style={{ fontSize: 'clamp(24px, 5vw, 28px)', fontWeight: 700, marginBottom: '10px' }}>Building Your Website</h2>
-        <p style={{ color: '#71717A', fontSize: 'clamp(14px, 3vw, 16px)', marginBottom: 'clamp(24px, 5vw, 40px)', minHeight: '24px' }}>{stages[stage]?.label}</p>
+        <h2 className="jakarta" style={{ fontSize: 'clamp(24px, 5vw, 28px)', fontWeight: 700, marginBottom: '10px' }}>
+          {failed ? 'Generation Failed' : 'Building Your Website'}
+        </h2>
+        <p style={{ color: failed ? '#EF4444' : '#71717A', fontSize: 'clamp(14px, 3vw, 16px)', marginBottom: 'clamp(24px, 5vw, 40px)', minHeight: '24px' }}>
+          {failed ? errorMessage : stages[stage]?.label}
+        </p>
+        
+        {failed && (
+          <div style={{ 
+            marginTop: '20px', 
+            padding: '16px', 
+            background: 'rgba(239, 68, 68, 0.1)', 
+            border: '1px solid rgba(239, 68, 68, 0.3)', 
+            borderRadius: '8px',
+            color: '#EF4444',
+            fontSize: 'clamp(12px, 2.5vw, 14px)'
+          }}>
+            ⚠️ Using fallback content. You can edit everything in the admin panel.
+          </div>
+        )}
         
         <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px' }}>
           <div style={{ height: '100%', width: `${progress}%`, background: `linear-gradient(90deg, ${primaryColor}, ${primaryColor}CC)`, borderRadius: '2px', transition: 'width 0.5s ease' }} />

@@ -61,7 +61,9 @@ export const businessAPI = {
 
 // Site API
 export const siteAPI = {
-  generate: () => api.post('/site/generate'),
+  generate: () => api.post('/site/generate', {}, {
+    timeout: 110000 // 110 seconds (just under 2 minutes to trigger before UI timeout)
+  }),
   getContent: () => api.get('/site/content')
 };
 
