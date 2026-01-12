@@ -14,11 +14,12 @@ A full-stack AI-powered website builder that generates professional websites usi
 
 ## Tech Stack
 
-- **Frontend**: React, Axios
+- **Frontend**: Next.js 14, React, Axios
 - **Backend**: Node.js, Express
 - **Database**: Neon PostgreSQL
 - **AI**: OpenAI GPT-4
 - **Authentication**: JWT
+- **Deployment**: Vercel (frontend), Railway/Render (backend)
 
 ## Setup Instructions
 
@@ -45,9 +46,9 @@ A full-stack AI-powered website builder that generates professional websites usi
    PORT=5000
    ```
 
-   Create `client/.env` (optional):
+   Create `client/.env.local` (optional, for local development):
    ```env
-   REACT_APP_API_URL=http://localhost:5000/api
+   NEXT_PUBLIC_API_URL=http://localhost:5000/api
    ```
 
 3. **Start the development servers**:
@@ -57,7 +58,7 @@ A full-stack AI-powered website builder that generates professional websites usi
 
    This will start:
    - Backend server on `http://localhost:5000`
-   - Frontend app on `http://localhost:3000`
+   - Next.js frontend on `http://localhost:3000`
 
 ### Getting Your Neon DB Connection String
 
@@ -73,11 +74,23 @@ The database tables will be automatically created when you start the server for 
 ## Project Structure
 
 ```
-├── client/              # React frontend
-│   ├── src/
-│   │   ├── App.js      # Main app component
-│   │   ├── api.js      # API client
-│   │   └── index.js    # Entry point
+├── client/              # Next.js frontend
+│   ├── pages/
+│   │   ├── _app.js     # App wrapper
+│   │   ├── index.js    # Landing page
+│   │   ├── auth.js     # Auth page
+│   │   ├── select-business.js
+│   │   ├── brand-setup.js
+│   │   ├── generating.js
+│   │   ├── admin.js    # Admin dashboard
+│   │   └── preview.js  # Preview page
+│   ├── components/
+│   │   └── UI.js       # Reusable components
+│   ├── lib/
+│   │   └── api.js      # API client
+│   ├── styles/
+│   │   └── globals.css # Global styles
+│   ├── next.config.js  # Next.js config
 │   └── package.json
 ├── server/              # Express backend
 │   ├── db/
@@ -130,11 +143,20 @@ The database tables will be automatically created when you start the server for 
 
 ## Production Deployment
 
-1. Set production environment variables
-2. Build frontend: `cd client && npm run build`
-3. Serve built files (or use Vercel/Netlify)
-4. Deploy backend (Railway, Render, etc.)
-5. Update frontend API URL
+### Frontend (Next.js on Vercel)
+1. Connect your GitHub repo to Vercel
+2. Vercel will auto-detect Next.js
+3. Add environment variable: `NEXT_PUBLIC_API_URL` (your backend URL)
+4. Deploy automatically on every push
+
+### Backend (Railway/Render/Vercel)
+1. Deploy backend separately
+2. Set environment variables in hosting platform
+3. Update `NEXT_PUBLIC_API_URL` in frontend to point to backend
+
+### Database
+- Tables are already created in Neon
+- Just ensure `DATABASE_URL` is set correctly in backend
 
 ## License
 
