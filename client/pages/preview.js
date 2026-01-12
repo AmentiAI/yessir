@@ -13,6 +13,7 @@ export default function Preview() {
   const [siteContent, setSiteContent] = useState(null)
   const [currentPage, setCurrentPage] = useState('home')
   const [loading, setLoading] = useState(true)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   
   useEffect(() => {
     const loadData = async () => {
@@ -84,8 +85,6 @@ export default function Preview() {
   const pages = isMultiPage ? siteContent.pages : []
   const currentPageData = pages.find(p => p.slug === currentPage) || pages[0]
   const navItems = siteContent?.navigation?.items || (isMultiPage ? pages.map(p => p.title) : ['Home', 'Services', 'About', 'Contact'])
-
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   
   // Render CTA button
   const renderCTA = (text, primary = true, onClick) => (

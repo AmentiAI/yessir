@@ -1,7 +1,5 @@
 import '../styles/globals.css'
 import { Component } from 'react'
-import { useRouter } from 'next/router'
-import { authAPI, businessAPI, siteAPI } from '../lib/api'
 
 // Business Types
 export const BUSINESS_TYPES = [

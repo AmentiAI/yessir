@@ -15,9 +15,14 @@ export default function Admin() {
   const [loading, setLoading] = useState(true)
   
   useEffect(() => {
+    let isMounted = true
+    
     const loadData = async () => {
       try {
         const dashboardRes = await adminAPI.getDashboard()
+        
+        if (!isMounted) return
+        
         setBusinessDetails(dashboardRes.data.business)
         setSiteContent(dashboardRes.data.site?.content)
         
@@ -32,6 +37,8 @@ export default function Admin() {
         }
       } catch (error) {
         console.error('Error loading admin data:', error)
+        
+        if (!isMounted) return
         
         // Try to get from sessionStorage
         try {
@@ -52,23 +59,36 @@ export default function Admin() {
             if (storedContent?.pages && Array.isArray(storedContent.pages) && storedContent.pages.length > 0) {
               setActivePage(storedContent.pages[0].slug)
             }
+          } else {
+            // No valid data found, redirect to setup
+            setTimeout(() => {
+              if (isMounted) {
+                router.push('/select-business')
+              }
+            }, 2000)
           }
         } catch (storageError) {
           console.error('Error reading sessionStorage:', storageError)
+          // Redirect if we can't get any data
+          setTimeout(() => {
+            if (isMounted) {
+              router.push('/select-business')
+            }
+          }, 2000)
         }
-        
-        // If no valid data, redirect to setup
-        setTimeout(() => {
-          if (!businessDetails || !siteContent) {
-            router.push('/select-business')
-          }
-        }, 2000)
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
     
     loadData()
+    
+    return () => {
+      isMounted = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   
   // Check if we have valid data (not just empty objects)

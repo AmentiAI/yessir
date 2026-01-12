@@ -171,10 +171,23 @@ export default function Generating() {
         clearTimeout(timeoutId)
       }
     }
-  }, [router, stages.length])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   
-  const businessDetails = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('businessDetails') || '{}') : {}
-  const primaryColor = businessDetails.primaryColor || '#6366F1'
+  const [primaryColor, setPrimaryColor] = useState('#6366F1')
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const businessDetails = JSON.parse(sessionStorage.getItem('businessDetails') || '{}')
+        if (businessDetails?.primaryColor) {
+          setPrimaryColor(businessDetails.primaryColor)
+        }
+      } catch (e) {
+        // Ignore
+      }
+    }
+  }, [])
   
   return (
     <div style={{ minHeight: '100vh', background: '#09090B', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
