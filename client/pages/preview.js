@@ -293,7 +293,6 @@ export default function Preview() {
               <div style={{ width: '24px', height: '2px', background: '#52525B', transition: 'all 0.3s', opacity: isMobileMenuOpen ? 0 : 1 }} />
               <div style={{ width: '24px', height: '2px', background: '#52525B', transition: 'all 0.3s', transform: isMobileMenuOpen ? 'rotate(-45deg) translate(7px, -6px)' : 'none' }} />
             </button>
-          </div>
           
           {/* Desktop Navigation */}
           <div className="desktop-nav" style={{ display: 'none' }}>
