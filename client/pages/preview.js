@@ -3,6 +3,9 @@ import { useRouter } from 'next/router'
 import { Button } from '../components/UI'
 import { BUSINESS_TYPES } from './_app'
 
+// Disable static generation - this page requires client-side data
+export const dynamic = 'force-dynamic'
+
 export default function Preview() {
   const router = useRouter()
   const [businessDetails, setBusinessDetails] = useState(null)
@@ -24,13 +27,28 @@ export default function Preview() {
           setSelectedBusiness(businessType)
         }
       } catch (error) {
-        const storedDetails = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('businessDetails') || '{}') : {}
-        const storedBusiness = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('selectedBusiness') || '{}') : {}
-        const storedContent = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('siteContent') || '{}') : {}
-        
-        setBusinessDetails(storedDetails)
-        setSelectedBusiness(storedBusiness)
-        setSiteContent(storedContent)
+        console.error('Failed to load preview data:', error)
+        // Only try sessionStorage on client side
+        if (typeof window !== 'undefined') {
+          try {
+            const storedDetails = JSON.parse(sessionStorage.getItem('businessDetails') || '{}')
+            const storedBusiness = JSON.parse(sessionStorage.getItem('selectedBusiness') || '{}')
+            const storedContent = JSON.parse(sessionStorage.getItem('siteContent') || '{}')
+            
+            // Only set if we have valid data
+            if (storedDetails && Object.keys(storedDetails).length > 0) {
+              setBusinessDetails(storedDetails)
+            }
+            if (storedBusiness && Object.keys(storedBusiness).length > 0) {
+              setSelectedBusiness(storedBusiness)
+            }
+            if (storedContent && Object.keys(storedContent).length > 0) {
+              setSiteContent(storedContent)
+            }
+          } catch (e) {
+            console.error('Failed to parse sessionStorage:', e)
+          }
+        }
       } finally {
         setLoading(false)
       }
@@ -39,7 +57,16 @@ export default function Preview() {
     loadData()
   }, [])
 
-  if (loading || !businessDetails || !selectedBusiness || !siteContent) {
+  // Check if we have valid data (not just empty objects)
+  const hasValidData = businessDetails && 
+    Object.keys(businessDetails).length > 0 && 
+    businessDetails.businessName &&
+    selectedBusiness && 
+    Object.keys(selectedBusiness).length > 0 &&
+    siteContent && 
+    Object.keys(siteContent).length > 0
+
+  if (loading || !hasValidData) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#09090B' }}>
         <div style={{ textAlign: 'center' }}>
@@ -270,10 +297,10 @@ export default function Preview() {
               <img src={businessDetails.logoUrl} alt="Logo" style={{ height: '36px', objectFit: 'contain' }} />
             ) : (
               <div style={{ width: '36px', height: '36px', background: color, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '16px' }}>
-                {businessDetails.businessName[0]}
+                {businessDetails.businessName?.[0] || '?'}
               </div>
             )}
-            <span className="jakarta" style={{ fontSize: 'clamp(16px, 4vw, 20px)', fontWeight: 700 }}>{businessDetails.businessName}</span>
+            <span className="jakarta" style={{ fontSize: 'clamp(16px, 4vw, 20px)', fontWeight: 700 }}>{businessDetails.businessName || 'Business'}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {/* Mobile Menu Button */}
@@ -421,12 +448,12 @@ export default function Preview() {
               <img src={businessDetails.logoUrl} alt="Logo" style={{ height: 'clamp(28px, 4vw, 32px)', objectFit: 'contain' }} />
             ) : (
               <div style={{ width: 'clamp(28px, 4vw, 32px)', height: 'clamp(28px, 4vw, 32px)', background: color, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 'clamp(12px, 3vw, 14px)' }}>
-                {businessDetails.businessName[0]}
+                {businessDetails.businessName?.[0] || '?'}
               </div>
             )}
-            <span className="jakarta" style={{ fontSize: 'clamp(14px, 4vw, 16px)', fontWeight: 700 }}>{businessDetails.businessName}</span>
+            <span className="jakarta" style={{ fontSize: 'clamp(14px, 4vw, 16px)', fontWeight: 700 }}>{businessDetails.businessName || 'Business'}</span>
           </div>
-          <p style={{ color: '#71717A', fontSize: 'clamp(12px, 3vw, 14px)' }}>© 2026 {businessDetails.businessName}. All rights reserved.</p>
+          <p style={{ color: '#71717A', fontSize: 'clamp(12px, 3vw, 14px)' }}>© 2026 {businessDetails.businessName || 'Business'}. All rights reserved.</p>
           <p style={{ color: '#A1A1AA', fontSize: 'clamp(11px, 2.5vw, 12px)', marginTop: '6px' }}>Built with SiteForge</p>
         </footer>
       </div>

@@ -1,14 +1,34 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { Button, Input, Card, Badge } from '../components/UI'
 import { authAPI } from '../lib/api'
 
 export default function Auth() {
   const router = useRouter()
-  const [authType, setAuthType] = useState(router.query.type || 'signup')
+  
+  // Simple state - 'login' or 'signup', default to signup
+  const [authType, setAuthType] = useState('signup')
   const [formData, setFormData] = useState({ name: '', email: '', password: '', company: '' })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+  
+  // Check URL on mount - if ?type=login, set to login
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const type = params.get('type')
+      if (type === 'login') {
+        setAuthType('login')
+      }
+    }
+  }, [])
+  
+  // Also check router query when it's ready
+  useEffect(() => {
+    if (router.isReady && router.query.type === 'login') {
+      setAuthType('login')
+    }
+  }, [router.isReady, router.query.type])
   
   const validate = () => {
     const newErrors = {}
@@ -27,9 +47,9 @@ export default function Auth() {
     
     setLoading(true)
     try {
-      const response = authType === 'signup' 
-        ? await authAPI.signup(formData)
-        : await authAPI.login({ email: formData.email, password: formData.password })
+      const response = authType === 'login'
+        ? await authAPI.login({ email: formData.email, password: formData.password })
+        : await authAPI.signup(formData)
       
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', response.data.token)
@@ -39,11 +59,30 @@ export default function Auth() {
       router.push('/select-business')
     } catch (error) {
       const message = error.response?.data?.error || 'An error occurred'
-      setErrors({ email: message })
+      
+      // If account exists and we're signing up, switch to login
+      if (message.includes('already exists') && authType === 'signup') {
+        setAuthType('login')
+        setErrors({ 
+          email: 'Account exists! Switched to Sign In. Enter your password below.',
+          suggestLogin: true 
+        })
+        setFormData({ ...formData, name: '', company: '' })
+      } else {
+        setErrors({ email: message })
+      }
       setLoading(false)
     }
   }
   
+  const switchMode = (newType) => {
+    setAuthType(newType)
+    setErrors({})
+    // Update URL without page reload
+    const newUrl = `/auth?type=${newType}`
+    window.history.pushState({}, '', newUrl)
+  }
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#09090B', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
@@ -64,12 +103,12 @@ export default function Auth() {
           </div>
           
           <h1 className="jakarta" style={{ fontSize: 'clamp(32px, 7vw, 44px)', fontWeight: 800, lineHeight: 1.15, letterSpacing: '-1px', marginBottom: '16px' }}>
-            {authType === 'signup' ? 'Start building your dream website' : 'Welcome back'}
+            {authType === 'login' ? 'Welcome back' : 'Start building your dream website'}
           </h1>
           <p style={{ fontSize: 'clamp(15px, 3vw, 17px)', color: '#71717A', lineHeight: 1.7 }}>
-            {authType === 'signup' 
-              ? 'Join thousands of businesses using AI to create stunning websites in minutes.'
-              : 'Sign in to continue managing your websites and projects.'
+            {authType === 'login'
+              ? 'Sign in to continue managing your websites and projects.'
+              : 'Join thousands of businesses using AI to create stunning websites in minutes.'
             }
           </p>
           
@@ -88,11 +127,49 @@ export default function Auth() {
       
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'clamp(24px, 5vw, 48px)', position: 'relative', zIndex: 10 }}>
         <Card className="animate-scale glass-strong" style={{ width: '100%', maxWidth: '420px', padding: 'clamp(24px, 5vw, 40px)' }}>
+          {/* Mode Toggle Buttons */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '10px' }}>
+            <button
+              onClick={() => switchMode('signup')}
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                background: authType === 'signup' ? '#6366F1' : 'transparent',
+                color: authType === 'signup' ? '#fff' : '#71717A',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              Create Account
+            </button>
+            <button
+              onClick={() => switchMode('login')}
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                background: authType === 'login' ? '#6366F1' : 'transparent',
+                color: authType === 'login' ? '#fff' : '#71717A',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              Sign In
+            </button>
+          </div>
+          
           <h2 className="jakarta" style={{ fontSize: 'clamp(20px, 4vw, 24px)', fontWeight: 700, marginBottom: '8px' }}>
-            {authType === 'signup' ? 'Create your account' : 'Sign in'}
+            {authType === 'login' ? 'Sign in' : 'Create your account'}
           </h2>
           <p style={{ color: '#71717A', fontSize: 'clamp(12px, 3vw, 14px)', marginBottom: 'clamp(24px, 4vw, 32px)' }}>
-            {authType === 'signup' ? 'Get started with a free account' : 'Enter your credentials to continue'}
+            {authType === 'login' ? 'Enter your credentials to continue' : 'Get started with a free account'}
           </p>
           
           <form onSubmit={handleSubmit}>
@@ -144,22 +221,18 @@ export default function Auth() {
               {loading ? (
                 <div style={{ width: '20px', height: '20px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
               ) : (
-                authType === 'signup' ? 'Create Account' : 'Sign In'
+                authType === 'login' ? 'Sign In' : 'Create Account'
               )}
             </Button>
           </form>
           
-          <div style={{ textAlign: 'center', marginTop: '24px' }}>
-            <span style={{ color: '#71717A', fontSize: '14px' }}>
-              {authType === 'signup' ? 'Already have an account? ' : "Don't have an account? "}
-            </span>
-            <button
-              onClick={() => setAuthType(authType === 'signup' ? 'login' : 'signup')}
-              style={{ background: 'none', border: 'none', color: '#6366F1', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
-            >
-              {authType === 'signup' ? 'Sign In' : 'Sign Up'}
-            </button>
-          </div>
+          {errors.suggestLogin && (
+            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(99,102,241,0.1)', borderRadius: '8px', border: '1px solid rgba(99,102,241,0.2)' }}>
+              <p style={{ color: '#6366F1', fontSize: '13px', margin: 0, fontWeight: 500 }}>
+                ✓ Switched to Sign In mode. Enter your password above.
+              </p>
+            </div>
+          )}
         </Card>
       </div>
     </div>

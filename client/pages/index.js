@@ -33,7 +33,7 @@ export default function Home() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(16px, 3vw, 32px)', flexWrap: 'wrap' }}>
           <a href="#features" style={{ color: '#A1A1AA', textDecoration: 'none', fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 500, transition: 'color 0.2s' }}>Features</a>
           <a href="#pricing" style={{ color: '#A1A1AA', textDecoration: 'none', fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 500 }}>Pricing</a>
-          <Button variant="secondary" size="sm" onClick={() => router.push('/auth')} style={{ fontSize: 'clamp(12px, 3vw, 14px)', padding: '8px 16px' }}>Sign In</Button>
+          <Button variant="secondary" size="sm" onClick={() => router.push('/auth?type=login')} style={{ fontSize: 'clamp(12px, 3vw, 14px)', padding: '8px 16px' }}>Sign In</Button>
           <Button size="sm" onClick={() => router.push('/auth')} style={{ fontSize: 'clamp(12px, 3vw, 14px)', padding: '8px 16px' }}>Get Started</Button>
         </div>
       </nav>
