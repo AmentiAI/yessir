@@ -46,10 +46,24 @@ export default function Auth() {
     if (!validate()) return
     
     setLoading(true)
+    setErrors({}) // Clear previous errors
+    
     try {
+      // Prepare data based on auth type
+      const requestData = authType === 'login'
+        ? { email: formData.email, password: formData.password }
+        : { 
+            email: formData.email, 
+            password: formData.password, 
+            name: formData.name,
+            company: formData.company || undefined
+          }
+      
+      console.log('Submitting:', authType, requestData)
+      
       const response = authType === 'login'
-        ? await authAPI.login({ email: formData.email, password: formData.password })
-        : await authAPI.signup(formData)
+        ? await authAPI.login(requestData)
+        : await authAPI.signup(requestData)
       
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', response.data.token)
@@ -58,7 +72,8 @@ export default function Auth() {
       
       router.push('/select-business')
     } catch (error) {
-      const message = error.response?.data?.error || 'An error occurred'
+      console.error('Auth error:', error)
+      const message = error.response?.data?.error || error.message || 'An error occurred. Please try again.'
       
       // If account exists and we're signing up, switch to login
       if (message.includes('already exists') && authType === 'signup') {
@@ -68,6 +83,17 @@ export default function Auth() {
           suggestLogin: true 
         })
         setFormData({ ...formData, name: '', company: '' })
+      } else if (message.includes('required')) {
+        // Handle missing required fields
+        if (message.includes('name')) {
+          setErrors({ name: 'Name is required' })
+        } else if (message.includes('email')) {
+          setErrors({ email: 'Email is required' })
+        } else if (message.includes('password')) {
+          setErrors({ password: 'Password is required' })
+        } else {
+          setErrors({ email: message })
+        }
       } else {
         setErrors({ email: message })
       }
