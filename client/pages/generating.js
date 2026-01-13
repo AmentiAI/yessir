@@ -9,6 +9,15 @@ export default function Generating() {
   const [failed, setFailed] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [primaryColor, setPrimaryColor] = useState('#6366F1')
+  const [debugInfo, setDebugInfo] = useState({
+    status: 'Initializing...',
+    apiCallStarted: false,
+    apiCallCompleted: false,
+    apiError: null,
+    timeoutReached: false,
+    sessionStorageData: null,
+    currentTime: new Date().toISOString()
+  })
   
   const stages = [
     { label: 'Analyzing business requirements', icon: '🔍' },
@@ -20,14 +29,62 @@ export default function Generating() {
   ]
   
   useEffect(() => {
-    const businessDetails = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('businessDetails') || '{}') : {}
-    const selectedBusiness = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('selectedBusiness') || '{}') : {}
+    // Get primary color from sessionStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const businessDetails = JSON.parse(sessionStorage.getItem('businessDetails') || '{}')
+        const selectedBusiness = JSON.parse(sessionStorage.getItem('selectedBusiness') || '{}')
+        const siteContent = sessionStorage.getItem('siteContent')
+        
+        console.log('🔍 [DEBUG] SessionStorage Data:', {
+          businessDetails,
+          selectedBusiness,
+          hasSiteContent: !!siteContent,
+          siteContentLength: siteContent?.length || 0
+        })
+        
+        setDebugInfo(prev => ({
+          ...prev,
+          sessionStorageData: {
+            hasBusinessDetails: Object.keys(businessDetails).length > 0,
+            hasSelectedBusiness: Object.keys(selectedBusiness).length > 0,
+            hasSiteContent: !!siteContent,
+            businessName: businessDetails.businessName
+          }
+        }))
+        
+        if (businessDetails?.primaryColor) {
+          setPrimaryColor(businessDetails.primaryColor)
+        }
+      } catch (e) {
+        console.error('❌ [DEBUG] Error reading sessionStorage:', e)
+      }
+    }
+  }, [])
+  
+  useEffect(() => {
+    console.log('🚀 [DEBUG] Generating component mounted, starting site generation...')
     
+    let isMounted = true
     let timeoutId
-    let isCompleted = false
+    let animationInterval
+    const startTime = Date.now()
     
     const generateSite = async () => {
+      console.log('📝 [DEBUG] generateSite function called')
+      
+      const businessDetails = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('businessDetails') || '{}') : {}
+      const selectedBusiness = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('selectedBusiness') || '{}') : {}
+      
+      console.log('📋 [DEBUG] Business Details:', {
+        businessName: businessDetails.businessName,
+        businessType: selectedBusiness.name,
+        hasBusinessDetails: Object.keys(businessDetails).length > 0,
+        hasSelectedBusiness: Object.keys(selectedBusiness).length > 0
+      })
+      
       const useFallback = () => {
+        console.log('⚠️ [DEBUG] Using fallback content')
         const fallback = {
           hero: { headline: `Welcome to ${businessDetails.businessName}`, subheadline: businessDetails.tagline || `Your trusted ${selectedBusiness.name?.toLowerCase()} partner`, cta: 'Get Started' },
           about: { title: 'About Us', content: `${businessDetails.businessName} is committed to delivering exceptional ${selectedBusiness.name?.toLowerCase()} services.` },
@@ -38,154 +95,180 @@ export default function Generating() {
           cta: { title: 'Ready to Get Started?', description: 'Contact us today', button: 'Contact Us' }
         }
         if (typeof window !== 'undefined') {
+          console.log('💾 [DEBUG] Saving fallback content to sessionStorage')
           sessionStorage.setItem('siteContent', JSON.stringify(fallback))
+          console.log('✅ [DEBUG] Fallback content saved, size:', JSON.stringify(fallback).length, 'bytes')
         }
         return fallback
       }
       
-      // Set 2-minute timeout (120,000ms)
+      // Set timeout (2 minutes)
+      console.log('⏱️ [DEBUG] Setting 2-minute timeout')
       timeoutId = setTimeout(() => {
-        if (!isCompleted) {
-          console.error('Site generation timed out after 2 minutes')
-          isCompleted = true
+        if (isMounted && !failed) {
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(2)
+          console.error(`⏰ [DEBUG] Site generation timed out after ${elapsed} seconds (2 minutes)`)
+          setDebugInfo(prev => ({ ...prev, timeoutReached: true, status: 'Timeout reached' }))
           setFailed(true)
           setErrorMessage('Site generation took too long. Using fallback content instead.')
           setStage(stages.length - 1)
           setProgress(100)
           useFallback()
           
-          // Redirect after showing error for 1 second
           setTimeout(() => {
-            router.push('/admin')
+            if (isMounted) {
+              console.log('🔄 [DEBUG] Redirecting to admin after timeout')
+              router.push('/admin')
+            }
           }, 1000)
         }
-      }, 120000) // 2 minutes
+      }, 120000)
       
-      // Start API call immediately (don't wait for animations)
-      let apiResponse = null
-      let apiError = null
-      
-      const apiPromise = siteAPI.generate()
-        .then(response => {
-          if (!isCompleted) {
-            apiResponse = response
+      // Animate progress
+      console.log('🎬 [DEBUG] Starting animation')
+      let currentStage = 0
+      animationInterval = setInterval(() => {
+        if (isMounted && currentStage < stages.length) {
+          console.log(`🎯 [DEBUG] Animation stage ${currentStage + 1}/${stages.length}: ${stages[currentStage].label}`)
+          setStage(currentStage)
+          setProgress(((currentStage + 1) / stages.length) * 100)
+          setDebugInfo(prev => ({ ...prev, status: `Animating: ${stages[currentStage].label}` }))
+          currentStage++
+        } else {
+          if (animationInterval) {
+            console.log('✅ [DEBUG] Animation completed')
+            clearInterval(animationInterval)
           }
-        })
-        .catch(error => {
-          if (!isCompleted) {
-            apiError = error
-            console.error('API call error:', error)
-          }
-        })
-      
-      // Animate progress while API call is running
-      for (let i = 0; i < stages.length; i++) {
-        setStage(i)
-        setProgress(((i + 1) / stages.length) * 100)
-        
-        // Check if API completed
-        if (apiResponse && !isCompleted) {
-          // API completed successfully
-          isCompleted = true
-          clearTimeout(timeoutId)
-          
-          if (typeof window !== 'undefined') {
-            sessionStorage.setItem('siteContent', JSON.stringify(apiResponse.data.site.content))
-          }
-          
-          // Complete remaining stages quickly
-          for (let j = i + 1; j < stages.length; j++) {
-            setStage(j)
-            setProgress(((j + 1) / stages.length) * 100)
-            await new Promise(r => setTimeout(r, 150))
-          }
-          
-          router.push('/admin')
-          return
         }
-        
-        if (apiError && !isCompleted) {
-          // API failed, use fallback
-          isCompleted = true
-          clearTimeout(timeoutId)
-          setFailed(true)
-          setErrorMessage('Failed to generate site. Using fallback content instead.')
-          useFallback()
-          setTimeout(() => {
-            router.push('/admin')
-          }, 1000)
-          return
-        }
-        
-        // Wait before next stage
-        await new Promise(r => setTimeout(r, 700))
-      }
+      }, 700)
       
-      // If animations finished, wait for API to complete (with a short timeout)
+      // Start API call
+      console.log('🌐 [DEBUG] Starting API call to siteAPI.generate()')
+      setDebugInfo(prev => ({ ...prev, apiCallStarted: true, status: 'Calling API...' }))
+      const apiStartTime = Date.now()
+      
       try {
-        await Promise.race([
-          apiPromise,
-          new Promise(resolve => setTimeout(resolve, 5000)) // Max 5 seconds after animations
-        ])
+        const response = await siteAPI.generate()
+        const apiDuration = ((Date.now() - apiStartTime) / 1000).toFixed(2)
         
-        if (apiResponse && !isCompleted) {
-          isCompleted = true
+        console.log('✅ [DEBUG] API call successful!', {
+          duration: `${apiDuration}s`,
+          hasResponse: !!response,
+          hasData: !!response?.data,
+          hasSite: !!response?.data?.site,
+          hasContent: !!response?.data?.site?.content,
+          contentKeys: response?.data?.site?.content ? Object.keys(response.data.site.content) : [],
+          contentSize: response?.data?.site?.content ? JSON.stringify(response.data.site.content).length : 0
+        })
+        
+        if (!isMounted) {
+          console.log('⚠️ [DEBUG] Component unmounted, aborting')
+          return
+        }
+        
+        // Clear timeout and interval
+        if (timeoutId) {
+          console.log('🧹 [DEBUG] Clearing timeout')
           clearTimeout(timeoutId)
-          
-          if (typeof window !== 'undefined') {
-            sessionStorage.setItem('siteContent', JSON.stringify(apiResponse.data.site.content))
+        }
+        if (animationInterval) {
+          console.log('🧹 [DEBUG] Clearing animation interval')
+          clearInterval(animationInterval)
+        }
+        
+        // Complete animation
+        console.log('🎯 [DEBUG] Completing animation')
+        setStage(stages.length - 1)
+        setProgress(100)
+        setDebugInfo(prev => ({ 
+          ...prev, 
+          apiCallCompleted: true, 
+          status: 'API call completed successfully',
+          apiDuration: `${apiDuration}s`
+        }))
+        
+        // Save to sessionStorage
+        if (typeof window !== 'undefined') {
+          console.log('💾 [DEBUG] Saving site content to sessionStorage')
+          const contentString = JSON.stringify(response.data.site.content)
+          sessionStorage.setItem('siteContent', contentString)
+          console.log('✅ [DEBUG] Site content saved to sessionStorage, size:', contentString.length, 'bytes')
+          setDebugInfo(prev => ({ ...prev, sessionStorageData: { ...prev.sessionStorageData, hasSiteContent: true, contentSize: contentString.length } }))
+        }
+        
+        // Redirect after brief delay
+        setTimeout(() => {
+          if (isMounted) {
+            console.log('🔄 [DEBUG] Redirecting to admin page (success)')
+            router.push('/admin')
           }
-          router.push('/admin')
-        } else if (apiError && !isCompleted) {
-          isCompleted = true
-          clearTimeout(timeoutId)
-          setFailed(true)
-          setErrorMessage('Failed to generate site. Using fallback content instead.')
-          useFallback()
-          setTimeout(() => {
-            router.push('/admin')
-          }, 1000)
-        } else if (!isCompleted) {
-          // Still waiting, but timeout will handle it
-          console.log('Still waiting for API response...')
-        }
+        }, 500)
       } catch (error) {
-        if (!isCompleted) {
-          isCompleted = true
-          clearTimeout(timeoutId)
-          console.error('Site generation error:', error)
-          setFailed(true)
-          setErrorMessage('Failed to generate site. Using fallback content instead.')
-          useFallback()
-          setTimeout(() => {
-            router.push('/admin')
-          }, 1000)
+        const apiDuration = ((Date.now() - apiStartTime) / 1000).toFixed(2)
+        
+        console.error('❌ [DEBUG] Site generation error:', {
+          error,
+          message: error?.message,
+          response: error?.response,
+          status: error?.response?.status,
+          data: error?.response?.data,
+          duration: `${apiDuration}s`
+        })
+        
+        if (!isMounted) {
+          console.log('⚠️ [DEBUG] Component unmounted, aborting error handling')
+          return
         }
+        
+        // Clear timeout and interval
+        if (timeoutId) {
+          console.log('🧹 [DEBUG] Clearing timeout after error')
+          clearTimeout(timeoutId)
+        }
+        if (animationInterval) {
+          console.log('🧹 [DEBUG] Clearing animation interval after error')
+          clearInterval(animationInterval)
+        }
+        
+        // Use fallback
+        console.log('⚠️ [DEBUG] Using fallback content due to error')
+        setFailed(true)
+        setErrorMessage('Failed to generate site. Using fallback content instead.')
+        setStage(stages.length - 1)
+        setProgress(100)
+        setDebugInfo(prev => ({ 
+          ...prev, 
+          apiError: error?.message || 'Unknown error',
+          status: 'API call failed, using fallback',
+          apiDuration: `${apiDuration}s`
+        }))
+        useFallback()
+        
+        // Redirect after brief delay
+        setTimeout(() => {
+          if (isMounted) {
+            console.log('🔄 [DEBUG] Redirecting to admin page (error/fallback)')
+            router.push('/admin')
+          }
+        }, 1000)
       }
     }
     
     generateSite()
     
-    // Cleanup timeout on unmount
     return () => {
+      console.log('🧹 [DEBUG] Component unmounting, cleaning up')
+      isMounted = false
       if (timeoutId) {
+        console.log('🧹 [DEBUG] Clearing timeout on unmount')
         clearTimeout(timeoutId)
+      }
+      if (animationInterval) {
+        console.log('🧹 [DEBUG] Clearing animation interval on unmount')
+        clearInterval(animationInterval)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-  
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const businessDetails = JSON.parse(sessionStorage.getItem('businessDetails') || '{}')
-        if (businessDetails?.primaryColor) {
-          setPrimaryColor(businessDetails.primaryColor)
-        }
-      } catch (e) {
-        // Ignore
-      }
-    }
   }, [])
   
   return (
@@ -197,39 +280,23 @@ export default function Generating() {
       <div style={{ position: 'relative', zIndex: 10, textAlign: 'center', maxWidth: '500px', padding: 'clamp(24px, 5vw, 48px)', width: '100%' }}>
         <div style={{ position: 'relative', width: 'clamp(80px, 15vw, 120px)', height: 'clamp(80px, 15vw, 120px)', margin: '0 auto clamp(24px, 5vw, 40px)' }}>
           <div style={{ position: 'absolute', inset: 0, border: '3px solid rgba(255,255,255,0.05)', borderRadius: '50%' }} />
-          <div style={{ position: 'absolute', inset: 0, border: '3px solid transparent', borderTopColor: primaryColor, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-          <div style={{ position: 'absolute', inset: '8px', border: '3px solid transparent', borderTopColor: `${primaryColor}60`, borderRadius: '50%', animation: 'spin 1.5s linear infinite reverse' }} />
-          <div style={{ position: 'absolute', inset: '20px', background: `${primaryColor}15`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 'clamp(28px, 6vw, 40px)' }}>{stages[stage]?.icon}</span>
+          <div style={{ position: 'absolute', inset: 0, border: '3px solid transparent', borderTopColor: primaryColor, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <div style={{ position: 'absolute', inset: '20%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(32px, 6vw, 48px)' }}>
+            {stages[stage]?.icon || '✨'}
           </div>
         </div>
         
-        <h2 className="jakarta" style={{ fontSize: 'clamp(24px, 5vw, 28px)', fontWeight: 700, marginBottom: '10px' }}>
-          {failed ? 'Generation Failed' : 'Building Your Website'}
-        </h2>
-        <p style={{ color: failed ? '#EF4444' : '#71717A', fontSize: 'clamp(14px, 3vw, 16px)', marginBottom: 'clamp(24px, 5vw, 40px)', minHeight: '24px' }}>
-          {failed ? errorMessage : stages[stage]?.label}
+        <h1 style={{ fontSize: 'clamp(24px, 5vw, 36px)', fontWeight: 800, marginBottom: 'clamp(12px, 3vw, 20px)', color: '#FAFAFA' }}>
+          {failed ? 'Generation Failed' : 'Building Your Site'}
+        </h1>
+        
+        <p style={{ fontSize: 'clamp(16px, 3vw, 18px)', color: '#A1A1AA', marginBottom: 'clamp(24px, 5vw, 40px)' }}>
+          {failed ? errorMessage : stages[stage]?.label || 'Initializing...'}
         </p>
         
-        {failed && (
-          <div style={{ 
-            marginTop: '20px', 
-            padding: '16px', 
-            background: 'rgba(239, 68, 68, 0.1)', 
-            border: '1px solid rgba(239, 68, 68, 0.3)', 
-            borderRadius: '8px',
-            color: '#EF4444',
-            fontSize: 'clamp(12px, 2.5vw, 14px)'
-          }}>
-            ⚠️ Using fallback content. You can edit everything in the admin panel.
-          </div>
-        )}
-        
-        <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden', marginBottom: '12px' }}>
-          <div style={{ height: '100%', width: `${progress}%`, background: `linear-gradient(90deg, ${primaryColor}, ${primaryColor}CC)`, borderRadius: '2px', transition: 'width 0.5s ease' }} />
+        <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden', marginBottom: 'clamp(16px, 3vw, 24px)' }}>
+          <div style={{ width: `${progress}%`, height: '100%', background: primaryColor, transition: 'width 0.3s ease', borderRadius: '2px' }} />
         </div>
-        
-        <p style={{ color: '#52525B', fontSize: 'clamp(11px, 2.5vw, 13px)' }}>{Math.round(progress)}% complete</p>
         
         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: 'clamp(24px, 4vw, 32px)', flexWrap: 'wrap' }}>
           {stages.map((_, i) => (
@@ -237,50 +304,75 @@ export default function Generating() {
           ))}
         </div>
         
-        {/* Skip button - appears after 30 seconds */}
-        {!failed && progress > 50 && (
+        {failed && (
           <button
             onClick={() => {
-              const businessDetails = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('businessDetails') || '{}') : {}
-              const selectedBusiness = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('selectedBusiness') || '{}') : {}
-              
-              const fallback = {
-                hero: { headline: `Welcome to ${businessDetails.businessName}`, subheadline: businessDetails.tagline || `Your trusted ${selectedBusiness.name?.toLowerCase()} partner`, cta: 'Get Started' },
-                about: { title: 'About Us', content: `${businessDetails.businessName} is committed to delivering exceptional ${selectedBusiness.name?.toLowerCase()} services.` },
-                sections: selectedBusiness.sections?.slice(0, 3).map(s => ({ title: s, description: `Our ${s.toLowerCase()} offerings`, items: [{ name: `Premium ${s}`, description: 'High-quality service', price: null }] })) || [],
-                features: [{ title: 'Quality', description: 'Unmatched quality' }, { title: 'Experience', description: 'Years of expertise' }],
-                testimonials: [{ name: 'Satisfied Customer', text: 'Exceptional service!', role: 'Client' }],
-                contact: { address: businessDetails.address || '123 Main St', phone: businessDetails.phone || '(555) 123-4567', email: businessDetails.email || 'hello@example.com', hours: 'Mon-Fri 9am-5pm' },
-                cta: { title: 'Ready to Get Started?', description: 'Contact us today', button: 'Contact Us' }
-              }
-              if (typeof window !== 'undefined') {
-                sessionStorage.setItem('siteContent', JSON.stringify(fallback))
-              }
+              console.log('🔄 [DEBUG] Manual redirect to admin clicked')
               router.push('/admin')
             }}
             style={{
               marginTop: '32px',
               padding: '12px 24px',
-              background: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: primaryColor,
+              border: 'none',
               borderRadius: '8px',
-              color: '#A1A1AA',
+              color: '#fff',
               fontSize: '14px',
+              fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.2s'
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(255,255,255,0.1)'
-              e.target.style.color = '#FAFAFA'
+              e.target.style.opacity = '0.9'
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(255,255,255,0.05)'
-              e.target.style.color = '#A1A1AA'
+              e.target.style.opacity = '1'
             }}
           >
-            Skip to Admin →
+            Continue to Admin →
           </button>
         )}
+        
+        {/* Debug Panel */}
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          background: 'rgba(0,0,0,0.9)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: '8px',
+          padding: '16px',
+          maxWidth: '400px',
+          fontSize: '12px',
+          fontFamily: 'monospace',
+          color: '#fff',
+          zIndex: 1000,
+          maxHeight: '300px',
+          overflow: 'auto'
+        }}>
+          <div style={{ fontWeight: 700, marginBottom: '8px', color: primaryColor }}>🐛 DEBUG INFO</div>
+          <div style={{ marginBottom: '4px' }}>Status: <span style={{ color: failed ? '#EF4444' : '#10B981' }}>{debugInfo.status}</span></div>
+          <div style={{ marginBottom: '4px' }}>Progress: {progress.toFixed(1)}%</div>
+          <div style={{ marginBottom: '4px' }}>Stage: {stage + 1}/{stages.length}</div>
+          <div style={{ marginBottom: '4px' }}>API Started: {debugInfo.apiCallStarted ? '✅' : '❌'}</div>
+          <div style={{ marginBottom: '4px' }}>API Completed: {debugInfo.apiCallCompleted ? '✅' : '❌'}</div>
+          {debugInfo.apiDuration && <div style={{ marginBottom: '4px' }}>API Duration: {debugInfo.apiDuration}</div>}
+          {debugInfo.apiError && <div style={{ marginBottom: '4px', color: '#EF4444' }}>API Error: {debugInfo.apiError}</div>}
+          {debugInfo.timeoutReached && <div style={{ marginBottom: '4px', color: '#F59E0B' }}>⏰ Timeout Reached</div>}
+          {debugInfo.sessionStorageData && (
+            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ marginBottom: '4px', fontWeight: 600 }}>SessionStorage:</div>
+              <div style={{ marginBottom: '2px' }}>Business: {debugInfo.sessionStorageData.hasBusinessDetails ? '✅' : '❌'}</div>
+              <div style={{ marginBottom: '2px' }}>Business Type: {debugInfo.sessionStorageData.hasSelectedBusiness ? '✅' : '❌'}</div>
+              <div style={{ marginBottom: '2px' }}>Site Content: {debugInfo.sessionStorageData.hasSiteContent ? '✅' : '❌'}</div>
+              {debugInfo.sessionStorageData.businessName && <div style={{ marginBottom: '2px' }}>Name: {debugInfo.sessionStorageData.businessName}</div>}
+              {debugInfo.sessionStorageData.contentSize && <div style={{ marginBottom: '2px' }}>Content Size: {debugInfo.sessionStorageData.contentSize} bytes</div>}
+            </div>
+          )}
+          <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: '10px', color: '#71717A' }}>
+            Check console for detailed logs
+          </div>
+        </div>
       </div>
     </div>
   )
