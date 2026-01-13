@@ -8,6 +8,7 @@ export default function Generating() {
   const [stage, setStage] = useState(0)
   const [failed, setFailed] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [primaryColor, setPrimaryColor] = useState('#6366F1')
   
   const stages = [
     { label: 'Analyzing business requirements', icon: '🔍' },
@@ -173,8 +174,6 @@ export default function Generating() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  
-  const [primaryColor, setPrimaryColor] = useState('#6366F1')
   
   useEffect(() => {
     if (typeof window !== 'undefined') {
