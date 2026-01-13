@@ -168,16 +168,13 @@ export default function Generating() {
         
         // Clear timeout and interval
         if (timeoutId) {
-          console.log('🧹 [DEBUG] Clearing timeout')
           clearTimeout(timeoutId)
         }
         if (animationInterval) {
-          console.log('🧹 [DEBUG] Clearing animation interval')
           clearInterval(animationInterval)
         }
         
         // Complete animation
-        console.log('🎯 [DEBUG] Completing animation')
         setStage(stages.length - 1)
         setProgress(100)
         setDebugInfo(prev => ({ 
@@ -188,7 +185,7 @@ export default function Generating() {
         }))
         
         // Save to sessionStorage
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && response?.data?.site?.content) {
           console.log('💾 [DEBUG] Saving site content to sessionStorage')
           const contentString = JSON.stringify(response.data.site.content)
           sessionStorage.setItem('siteContent', contentString)
@@ -196,13 +193,11 @@ export default function Generating() {
           setDebugInfo(prev => ({ ...prev, sessionStorageData: { ...prev.sessionStorageData, hasSiteContent: true, contentSize: contentString.length } }))
         }
         
-        // Redirect after brief delay
-        setTimeout(() => {
-          if (isMounted) {
-            console.log('🔄 [DEBUG] Redirecting to admin page (success)')
-            router.push('/admin')
-          }
-        }, 500)
+        // Redirect immediately - don't wait
+        console.log('🔄 [DEBUG] Redirecting to admin page (success)')
+        if (isMounted) {
+          router.push('/admin')
+        }
       } catch (error) {
         const apiDuration = ((Date.now() - apiStartTime) / 1000).toFixed(2)
         
@@ -216,22 +211,18 @@ export default function Generating() {
         })
         
         if (!isMounted) {
-          console.log('⚠️ [DEBUG] Component unmounted, aborting error handling')
           return
         }
         
         // Clear timeout and interval
         if (timeoutId) {
-          console.log('🧹 [DEBUG] Clearing timeout after error')
           clearTimeout(timeoutId)
         }
         if (animationInterval) {
-          console.log('🧹 [DEBUG] Clearing animation interval after error')
           clearInterval(animationInterval)
         }
         
         // Use fallback
-        console.log('⚠️ [DEBUG] Using fallback content due to error')
         setFailed(true)
         setErrorMessage('Failed to generate site. Using fallback content instead.')
         setStage(stages.length - 1)
@@ -244,13 +235,11 @@ export default function Generating() {
         }))
         useFallback()
         
-        // Redirect after brief delay
-        setTimeout(() => {
-          if (isMounted) {
-            console.log('🔄 [DEBUG] Redirecting to admin page (error/fallback)')
-            router.push('/admin')
-          }
-        }, 1000)
+        // Redirect immediately
+        console.log('🔄 [DEBUG] Redirecting to admin page (error/fallback)')
+        if (isMounted) {
+          router.push('/admin')
+        }
       }
     }
     

@@ -37,6 +37,7 @@ export default function Admin() {
         }
       } catch (error) {
         console.error('Error loading admin data:', error)
+        console.log('📦 [DEBUG] Falling back to sessionStorage')
         
         if (!isMounted) return
         
@@ -45,6 +46,12 @@ export default function Admin() {
           const storedDetails = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('businessDetails') || '{}') : {}
           const storedBusiness = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('selectedBusiness') || '{}') : {}
           const storedContent = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('siteContent') || '{}') : {}
+          
+          console.log('📦 [DEBUG] SessionStorage data:', {
+            hasDetails: Object.keys(storedDetails).length > 0,
+            hasBusiness: Object.keys(storedBusiness).length > 0,
+            hasContent: Object.keys(storedContent).length > 0
+          })
           
           // Only set if we have valid data
           if (storedDetails && Object.keys(storedDetails).length > 0 && storedDetails.businessName) {
@@ -61,6 +68,7 @@ export default function Admin() {
             }
           } else {
             // No valid data found, redirect to setup
+            console.log('⚠️ [DEBUG] No valid data found, redirecting to select-business')
             setTimeout(() => {
               if (isMounted) {
                 router.push('/select-business')
